@@ -65,7 +65,7 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
 
         #   handle lambda[i] frames arriving at input port i
         for i in range(n):
-            for frame in range(lambda_list[i]):
+            for frame in range(0, lambda_list[i]):
                 #   insert arrival  time of current frame
                 arrivals.append(context.get_time())
                 #   pick an output port according to the port's probabilities
@@ -84,7 +84,8 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
 
                 #   dequeue all the handled frames from output ports' queue
                 for frame_d in range(mu_list[output_port]):
-                    output_ports_queues[output_port].get()
+                    index = output_ports_queues[output_port].get()
+                    finish_times[index] = context
 
     #   a loop for emptying the remaining frames in the queues
     while frames_done_counter > 0 :
