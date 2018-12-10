@@ -51,13 +51,13 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
     t_s = []
 
     #   array of arrival times of frames
-    arrivals = []
+    arrivals = [0] * (sum(lambda_list) * t)
 
     #   array of times of insertion of a frame to a queue
-    queue_insertion_times = []
+    queue_insertion_times = [0] * (sum(lambda_list) * t)
 
     #   array of finishing times of frames
-    finish_times = []
+    finish_times = [0] * (sum(lambda_list) * t)
 
     #   simulation starts here
     while context.get_time() < t :
@@ -67,7 +67,7 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
         for i in range(n):
             for frame in range(0, lambda_list[i]):
                 #   insert arrival  time of current frame
-                arrivals.append(context.get_time())
+                arrivals[frame] = context.get_time()
                 #   pick an output port according to the port's probabilities
                 output_port = numpy.random.choice(range(0, m-1), p_matrix[i])
 
@@ -77,7 +77,8 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                 except queue.Full:
                     deleted_output_port[output_port] += 1
                     deleted_frames_counter += 1
-                queue_insertion_times.append(context.get_time())
+                #   update queue insertion time of current frame
+                queue_insertion_times[frame] = context.get_time()
                 #   handle mu_list[output_port] frames in the output port queue
                 frames_done_output_port[output_port] += mu_list[output_port]
                 frames_done_counter += mu_list[output_port]
@@ -85,7 +86,7 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                 #   dequeue all the handled frames from output ports' queue
                 for frame_d in range(mu_list[output_port]):
                     index = output_ports_queues[output_port].get()
-                    finish_times[index] = context
+                    finish_times[index] = context.get_time()
 
     #   a loop for emptying the remaining frames in the queues
     while frames_done_counter > 0 :
