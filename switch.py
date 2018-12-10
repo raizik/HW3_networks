@@ -1,4 +1,5 @@
 import sys
+import queue
 #   time class for measuring returned finish time of the simulation
 
 
@@ -22,7 +23,20 @@ class Context:
 def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
     #   create a context for time measure
     context = Context()
-    #   todo: create the simulation
+    #   initializing a 2D array of frame queues for each output port
+    output_ports_queues = []
+    for i in range(m):
+        port_queue = queue.Queue(maxsize=q_list[i])
+        output_ports_queues.append(port_queue)
+    #   (1/lambda[i]) is the avg time of arrival of a frame
+    #   a counter of the finished frames
+    frames_done_counter = 0
+    #   simulation starts here
+    while context.get_time() < t :
+
+    #   a loop for emptying the remaining frames in the queues
+    while frames_done_counter > 0 :
+        #   todo:
 
 
 def main():
