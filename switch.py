@@ -35,20 +35,14 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
     #   a counter array for deleted frames in each output port
     deleted_output_port = [m]
 
-    #   a counter of the deleted frames
+    #   a counter of the deleted frames (X)
     deleted_frames_counter = 0
 
     #   a counter array for finished frames in each output port
     frames_done_output_port = [m]
 
-    #   a counter of the finished frames
+    #   a counter of the finished frames (Y)
     frames_done_counter = 0
-
-    #   t_w array of average waiting time in the system (for all the frames handled)
-    t_w = []
-
-    #   t_s array of average  service time in the system (for all the frames handled)
-    t_s = []
 
     #   array of arrival times of frames
     arrivals = [0] * (sum(lambda_list) * t)
@@ -59,8 +53,11 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
     #   array of finishing times of frames
     finish_times = [0] * (sum(lambda_list) * t)
 
+    #   frames left to be handled
+    frames_left_counter = 0;
+
     #   simulation starts here
-    while context.get_time() < t :
+    while context.get_time() < t:
         context.tick()
 
         #   handle lambda[i] frames arriving at input port i
@@ -77,6 +74,9 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                 except queue.Full:
                     deleted_output_port[output_port] += 1
                     deleted_frames_counter += 1
+                    frames_left_counter -= 1
+                #   update counter of frames left in queues
+                frames_left_counter += 1
                 #   update queue insertion time of current frame
                 queue_insertion_times[frame] = context.get_time()
                 #   handle mu_list[output_port] frames in the output port queue
@@ -87,10 +87,28 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                 for frame_d in range(mu_list[output_port]):
                     index = output_ports_queues[output_port].get()
                     finish_times[index] = context.get_time()
+                    frames_left_counter -= 1
 
     #   a loop for emptying the remaining frames in the queues
-    while frames_done_counter > 0 :
-        #   todo:
+    #   handles remaining frames in output ports queues
+    while frames_left_counter > 0 :
+        context.tick()
+        output_port = numpy.random.choice(range(0, m - 1), p_matrix[i])
+        #   handle mu_list[output_port] frames in the output port queue
+        frames_done_output_port[output_port] += mu_list[output_port]
+        frames_done_counter += mu_list[output_port]
+
+        #   dequeue all the handled frames from output ports' queue
+        for frame_d in range(mu_list[output_port]):
+            index = output_ports_queues[output_port].get()
+            finish_times[index] = context.get_time()
+            frames_left_counter -= 1
+
+    #   the output values:
+    t_final = context.get_time()
+    y = frames_done_counter
+    x = deleted_frames_counter
+    #   todo:  T_w and T_s: iterate over the times arrays to calculate these values
 
 
 def main():
