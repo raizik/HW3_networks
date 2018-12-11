@@ -28,12 +28,12 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
 
     #   initializing a 2D array of frame queues for each output port
     output_ports_queues = []
-    for i in range(m):
+    for i in range(int(m)):
         port_queue = queue.Queue(maxsize=q_list[i])
         output_ports_queues.append(port_queue)
 
     #   a counter array for deleted frames in each output port
-    deleted_output_port = [m]
+    deleted_output_port = [int(m)]
 
     #   a counter of the deleted frames (X)
     deleted_frames_counter = 0
@@ -44,41 +44,48 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
     #   a counter of the finished frames (Y)
     frames_done_counter = 0
 
-    #   array of arrival times of frames
-    arrivals = [0] * (sum(lambda_list) * t)
-
-    #   array of times of insertion of a frame to a queue
-    queue_insertion_times = [0] * (sum(lambda_list) * t)
-
-    #   array of finishing times of frames
-    finish_times = [0] * (sum(lambda_list) * t)
-
     #   frames left to be handled
-    frames_left_counter = 0;
+    frames_left_counter = 0
 
     #   simulation starts here
-    while context.get_time() < t:
+    while context.get_time() < int(t):
         context.tick()
 
         #   handle lambda[i] frames arriving at input port i
-        for i in range(n):
-            for frame in range(0, lambda_list[i]):
+        for i in range(int(n)):
+            #   array of arrival times of frames
+            arrivals = [0] * (int(lambda_list[i]))
+
+            #   array of times of insertion of a frame to a queue
+            queue_insertion_times = [0] * (int(lambda_list[i]))
+
+            #   array of finishing times of frames
+            finish_times = [0] * (int(lambda_list[i]))
+            for frame in range(0, int(lambda_list[i])):
                 #   insert arrival  time of current frame
                 arrivals[frame] = context.get_time()
+                probabilities = []
+                for k in range(int(m)):
+                    probabilities.append(p_matrix[i][k])
+                m_array = []
+                for g in range(int(m)):
+                    m_array.append(float(g))
                 #   pick an output port according to the port's probabilities
-                output_port = numpy.random.choice(range(0, m-1), p_matrix[i])
+                output_port = random.choices(m_array, probabilities)
+                #   output_port = numpy.random.choice(m_array, p_matrix[i])
 
                 #   try to enqueue the frame to the chosen output port's queue
                 try:
-                    output_ports_queues[output_port].put(frame)
+                    output_ports_queues[output_port-1].put(frame)
                 except queue.Full:
-                    deleted_output_port[output_port] += 1
+                    deleted_output_port[output_port-1] += 1
                     deleted_frames_counter += 1
                     frames_left_counter -= 1
                 #   update counter of frames left in queues
                 frames_left_counter += 1
                 #   update queue insertion time of current frame
                 queue_insertion_times[frame] = context.get_time()
+        #   sum up all T_s, T_w of the ith output port
         #   empty output ports' queues
         context.tick()
         for j in range(m):
@@ -111,10 +118,13 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
     t_final = context.get_time()
     y = frames_done_counter
     x = deleted_frames_counter
+    print(x)
+
     #   todo:  T_w and T_s: iterate over the times arrays to calculate these values
 
 
 def main():
+    print("here")
     t = sys.argv[1]
     n = sys.argv[2]
     m = sys.argv[3]
@@ -124,31 +134,31 @@ def main():
     columns = m
     matrix_p = []
     index_argv = 4
-    for i in range(rows):
+    for i in range(int(n)):
         sub = []
-        for j in range(columns):
+        for j in range(int(m)):
             sub.append(sys.argv[index_argv])
             index_argv += 1
         matrix_p.append(sub)
 
     #   initialize lambdas array
     lambda_array = []
-    index_argv = 3 + n*m + 1
-    for i in range(n):
+    index_argv = 3 + ((int(n)) * (int(m))) + 1
+    for i in range(int(n)):
         lambda_array.append(sys.argv[index_argv])
         index_argv += 1
 
     #   init Qs array
     q_array = []
-    index_argv = 3 + n*m + n + 1
-    for i in range(m):
+    index_argv = 3 + ((int(n)) * (int(m))) + int(n) + 1
+    for i in range(int(m)):
         q_array.append(sys.argv[index_argv])
         index_argv += 1
 
     #   init mu array
     mu_array = []
-    index_argv = 3 + n*m + n + m + 1
-    for i in range(m):
+    index_argv = 3 + ((int(n)) * (int(m))) + int(n) + int(m) + 1
+    for i in range(int(m)):
         mu_array.append(sys.argv[index_argv])
         index_argv += 1
 
@@ -156,3 +166,7 @@ def main():
     switch(t, n, m, matrix_p, lambda_array, q_array, mu_array)
 
     #   print out result to file
+
+
+if __name__ == '__main__':
+    main()
