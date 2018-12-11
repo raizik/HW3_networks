@@ -79,19 +79,22 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                 frames_left_counter += 1
                 #   update queue insertion time of current frame
                 queue_insertion_times[frame] = context.get_time()
-                #   handle mu_list[output_port] frames in the output port queue
-                frames_done_output_port[output_port] += mu_list[output_port]
-                frames_done_counter += mu_list[output_port]
+        #   empty output ports' queues
+        context.tick()
+        for j in range(m):
+            #   handle mu_list[output_port] frames in the output port queue
+            frames_done_output_port[j] += mu_list[j]
+            frames_done_counter += mu_list[j]
 
-                #   dequeue all the handled frames from output ports' queue
-                for frame_d in range(mu_list[output_port]):
-                    index = output_ports_queues[output_port].get()
-                    finish_times[index] = context.get_time()
-                    frames_left_counter -= 1
+            #   dequeue all the handled frames from output ports' queue
+            for frame_d in range(mu_list[j]):
+                index = output_ports_queues[j].get()
+                finish_times[index] = context.get_time()
+                frames_left_counter -= 1
 
     #   a loop for emptying the remaining frames in the queues
     #   handles remaining frames in output ports queues
-    while frames_left_counter > 0 :
+    while frames_left_counter > 0:
         context.tick()
         output_port = numpy.random.choice(range(0, m - 1), p_matrix[i])
         #   handle mu_list[output_port] frames in the output port queue
