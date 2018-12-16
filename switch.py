@@ -142,32 +142,6 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                 #   subtracting insertion to queue time from T_w
                 t_w -= context.get_time()
 
-    #   max_i = 0
-    #   for j in range(int(m)):
-    #    if frames_done_output_port[j] >= frames_done_output_port[max_i]:
-    #        max_i = j
-    #   context.inc_by(frames_done_output_port[max_i]*(float(1/int(mu_list[max_i]))))
-
-    #   print("here out of loop")
-    #   a loop for emptying the remaining frames in the queues
-    #   handles remaining frames in output ports queues
-    #   while frames_left_counter > 0:
-        #   print("here last while loop")
-        #   context.tick()
-        #   for output_port in range(int(m)):
-            #    handle mu_list[output_port] frames in the output port queue
-            #   frames_done_output_port[output_port] += int(mu_list[output_port])
-            #   frames_done_counter += int(mu_list[output_port])
-
-            #   dequeue all the handled frames from output ports' queue
-            #   for frame_d in range(int(mu_list[output_port])):
-                #   try:
-                    #   index = (output_ports_queues[output_port]).get_nowait()
-                #   except queue.Empty:
-                    #   continue
-                #   finish_times[index] = context.get_time()
-                #   frames_left_counter -= 1
-
     #   the output values:
     t_final = context.get_time()
     y = frames_done_counter
