@@ -142,7 +142,6 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                 #   subtracting insertion to queue time from T_w
                 t_w -= context.get_time()
 
-    #   the output values:
     t_final = context.get_time()
     y = frames_done_counter
     #   todo: return frames done for each output port
