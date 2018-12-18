@@ -98,6 +98,14 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
                     try:
                         output_ports_queues[j].get_nowait()
                     except queue.Empty:
+                        while not output_ports_queues[j].full() and frames_to_service[j] > 0:
+                            output_ports_queues[j].put_nowait(int(d_frame))
+                            frames_to_service[j] -= 1
+                            frames_to_service_counter -= 1
+                            frames_left_counter += 1
+                            #   subtracting insertion to queue time
+                            t_w -= context.get_time()
+                        d_frame -= 1
                         continue
                     #   print("here frame_d post try block")
                     #   finish_times.insert(index, context.get_time())
