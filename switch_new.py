@@ -94,7 +94,6 @@ def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
                     #   print("bad")
                     #   add/sub start of service time
                     t_w += time_stamp
-                    t_s -= time_stamp
                     if not queued:
                         output_ports_counter[o_port] += 1
                         t_w -= time_stamp
@@ -115,27 +114,21 @@ def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
                     new_event = [time_stamp + ports_service_time[o_port], [o_port, True, True]]
                     queue.heappush(events, new_event)
                 if is_port_free:
-                    if not queued and ports_service_time[o_port] > 0:
+                    if not queued:
                         #   sub enter to queue time
                         t_w -= time_stamp
                         output_ports_counter[o_port] += 1
                         new_event = [time_stamp + ports_service_time[o_port], [o_port, True, True]]
                         queue.heappush(events, new_event)
                     else:
-                        if not queued:
-                            output_ports_counter[o_port] += 1
-                            #   subtracting insertion to queue time
-                            t_w -= time_stamp
-                        #   add sub start of service time
-                        t_w += time_stamp
-                        t_s -= time_stamp
-                        lambda_var = float(mu_list1[o_port])
-                        exp_out2 = np.random.exponential(1.0/lambda_var)
-                        time_entry = time_stamp + exp_out2 + ports_service_time[o_port]
-                        entry = [time_entry, [o_port, False, False]]
-                        queue.heappush(events, entry)
-                        free_port[o_port] = False
-                        ports_service_time[o_port] = exp_out2
+                            t_w += time_stamp
+                            lambda_var = float(mu_list1[o_port])
+                            exp_out2 = np.random.exponential(1.0/lambda_var)
+                            time_entry = time_stamp + exp_out2 + ports_service_time[o_port]
+                            entry = [time_entry, [o_port, False, False]]
+                            queue.heappush(events, entry)
+                            free_port[o_port] = False
+                            ports_service_time[o_port] = exp_out2
         else:
             #   END SERVICE
             output_ports_counter[o_port] -= 1
@@ -145,7 +138,7 @@ def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
             exp_out = np.random.exponential(1.0/lambda_var)
             t_tag = time_stamp + exp_out
             #   adding end of service time
-            t_s += t_tag
+            t_s += exp_out
             free_port[o_port] = True
             ports_service_time[o_port] = 0
 
@@ -166,7 +159,7 @@ def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
     #   print("y2:")
     #   print(frames_done_output_port[1])
 
-    file_temp.write("T': %.2f, x: %d, x1: %d, x2: %d, y: %d, y1: %d, y2: %d, Tw: %.8f, Ts: %.8f %%\n"
+    file_temp.write("T': %.8f, x: %d, x1: %d, x2: %d, y: %d, y1: %d, y2: %d, Tw: %.8f, Ts: %.8f %%\n"
                     % (t_tag, deleted_frames_counter, deleted_output_port[0],
                        deleted_output_port[1], frames_done_counter, frames_done_output_port[0],
                         frames_done_output_port[1], t_w_avg, t_s_avg))
