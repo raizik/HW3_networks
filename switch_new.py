@@ -128,14 +128,14 @@ def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
     t_w_avg = float(t_w/y)
     t_s_avg = float(t_s/y)
 
-    file_temp.write("T': %.8f, x: %d, x1: %d, y: %d, y1: %d, Tw: %.8f, Ts: %.8f, T_avg: %.8f\n"
+    file_temp.write("T':, %.8f, x:, %d, x1:, %d, y:, %d, y1:, %d, Tw:, %.8f, Ts:, %.8f, T:, %.8f\n"
                     % (t_tag, deleted_frames_counter, deleted_output_port[0],
                        frames_done_counter, frames_done_output_port[0],
                         t_w_avg, t_s_avg, t_w_avg + t_s_avg))
 
 
 def main():
-    file_temp = open("output1_2500.csv", "w+")
+    file_temp = open("output2_2500.csv", "w+")
 
     t = sys.argv[1]
     n = sys.argv[2]
