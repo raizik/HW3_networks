@@ -1,28 +1,11 @@
 import sys
-import queue
+try:
+    import queue as queue
+except ImportError:
+    import Queue as queue
 import numpy as np
-#   time class for measuring returned finish time of the simulation
 
 
-class Context:
-    def __init__(self):
-        self.time = 0
-        self.lastTimeLogged = 0
-        #   self.unit_time = unit_t
-
-    def get_time(self):
-        return self.time
-
-    def tick(self, unit_t):
-        #   self.lastTimeLogged = ttime.time_ns()
-        self.time += unit_t
-
-    def inc_by(self, val):
-        self.time += val
-
-
-#   the actual simulation
-#   should print the output line
 def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
 
     #   create a context for time measure
@@ -71,8 +54,6 @@ def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
     output_ports_counter = [0] * int(m1)
     free_port = [True] * (int(m1))
     ports_service_time = [0] * (int(m1))
-    print(free_port[0])
-    print(free_port[1])
     while not len(events) == 0:
         curr_event = queue.heappop(events)
         o_port = int(curr_event[1][0])
@@ -146,18 +127,6 @@ def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
     x = deleted_frames_counter
     t_w_avg = float(t_w/y)
     t_s_avg = float(t_s/y)
-    #   print("x:")
-    #   print(deleted_frames_counter)
-    #   print("x1:")
-    #   print(deleted_output_port[0])
-    #   print("x2:")
-    #   print(deleted_output_port[1])
-    #   print("y:")
-    #   print(frames_done_counter)
-    #   print("y1:")
-    #   print(frames_done_output_port[0])
-    #   print("y2:")
-    #   print(frames_done_output_port[1])
 
     file_temp.write("T': %.8f, x: %d, x1: %d, x2: %d, y: %d, y1: %d, y2: %d, Tw: %.8f, Ts: %.8f %%\n"
                     % (t_tag, deleted_frames_counter, deleted_output_port[0],
@@ -176,43 +145,32 @@ def main():
     columns = m
     matrix_p = []
     index_argv = 4
-    print("matrix prob:")
     for i in range(int(n)):
         sub = []
         for j in range(int(m)):
             sub.append(float(sys.argv[index_argv]))
-            print(index_argv)
             index_argv += 1
         matrix_p.append(sub)
-    for i in range(int(n)):
-        for j in range(int(m)):
-            print(i, j, matrix_p[i][j], sep=",")
 
     #   initialize lambdas array
     lambda_array = []
-    print("lambda array:")
     index_argv = 3 + ((int(n)) * (int(m))) + 1
     for i in range(int(n)):
         lambda_array.append(sys.argv[index_argv])
-        print(i, index_argv, lambda_array[i], sep=",")
         index_argv += 1
 
     #   init Qs array
     q_array = []
-    print("q list sizes array:")
     index_argv = 3 + ((int(n)) * (int(m))) + int(n) + 1
     for i in range(int(m)):
         q_array.append(sys.argv[index_argv])
-        print(i, index_argv,q_array[i], sep=",")
         index_argv += 1
 
     #   init mu array
     mu_array = []
-    print("mu array:")
     index_argv = 3 + ((int(n)) * (int(m))) + int(n) + int(m) + 1
     for index in range(int(m)):
         mu_array.append(sys.argv[int(index_argv)])
-        print(index, index_argv, mu_array[index], sep=",")
         index_argv += 1
 
     #   call switch with suitable parameters
