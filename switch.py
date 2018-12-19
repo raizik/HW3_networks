@@ -152,9 +152,7 @@ def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
 
     t_final = context.get_time()
     y = frames_done_counter
-    #   todo: return frames done for each output port
     x = deleted_frames_counter
-    #   todo: return deleted frames for each output port
     t_w_avg = float(t_w/frames_done_counter)
     t_s_avg = float(t_s/frames_done_counter)
     print("T': ")

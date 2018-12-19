@@ -1,22 +1,21 @@
 import sys
 import queue
-import time as ttime
 import numpy as np
 #   time class for measuring returned finish time of the simulation
 
 
 class Context:
-    def __init__(self, unit):
+    def __init__(self):
         self.time = 0
         self.lastTimeLogged = 0
-        self.unit_time = unit
+        #   self.unit_time = unit_t
 
     def get_time(self):
         return self.time
 
-    def tick(self):
+    def tick(self, unit_t):
         #   self.lastTimeLogged = ttime.time_ns()
-        self.time += self.unit_time
+        self.time += unit_t
 
     def inc_by(self, val):
         self.time += val
@@ -24,105 +23,158 @@ class Context:
 
 #   the actual simulation
 #   should print the output line
-def switch(t, n, m, p_matrix, lambda_list, q_list, mu_list):
-    #   create a context for time measure
-    context = Context(0.9)
+def switch(t1, n1, m1, p_matrix1, lambda_list1, q_list1, mu_list1, file_temp):
 
-    #   initializing a 2D array of frame queues for each output port
-    output_ports_queues = [int(m)]
-    for i in range(int(m)):
-        port_queue = queue.Queue(maxsize=int(q_list[i]))
-        output_ports_queues.insert(i, port_queue)
+    #   create a context for time measure
+    #   context = Context()
+
     t_w = 0
     t_s = 0
     #   frames left to be handled
     frames_left_counter = 0
     #   initialize events queue
-    events = queue.Queue()
-    while context.get_time() < float(t):
-        for i_port in range(int(n)):
-            event = queue.Queue(maxsize=int(lambda_list[i_port]))
-            for frame in range(int(lambda_list[i_port])):
-                #   pick an output port according to the port's probabilities
-                output_port_array = np.random.choice([o for o in range(int(m))], 1, False, p_matrix[i_port])
-                output_port = output_port_array[0]
-                t_w -= context.get_time()
-                event.put_nowait(output_port)
-                frames_left_counter += 1
-            events.put_nowait(event)
-            context.tick()
+    events = []
+    time_t = 0
+    while float(time_t) < float(t1):
+        for i_port in range(int(n1)):
+            #   pick an output port according to the port's probabilities
+            outport_array = [o for o in range(int(m1))]
+            output_port_array = np.random.choice(outport_array, 1, False, p_matrix1[i_port])
+            output_port = output_port_array[0]
+            lambda_var1 = float(lambda_list1[i_port])
+            val_exp = np.random.exponential(1.0/lambda_var1)
+            time_t += (val_exp)
+            #   context.tick(float(val_exp))
+            entry = [float(time_t), [output_port, True, False]]
+            queue.heappush(events, entry)
+            frames_left_counter += 1
+            #   t_w -= context.get_time()
     #   a counter array for deleted frames in each output port
-    deleted_output_port = [0] * int(m)
+    deleted_output_port = []
+    for i1 in range(int(m1)):
+        deleted_output_port.append(0)
 
     #   a counter of the deleted frames (X)
     deleted_frames_counter = 0
 
-    #   the average waiting time and service time
-    t_w = 0
-    t_s = 0
     #   a counter array for finished frames in each output port
-    frames_done_output_port = [0] * int(m)
+    frames_done_output_port = []
+    for i2 in range(int(m1)):
+        frames_done_output_port.append(0)
 
     #   a counter of the finished frames (Y)
     frames_done_counter = 0
 
-    done = False
-    #   context.tick()
-    # a counter array of frames to be serviced
-    frames_to_service = [0] * int(m)
-    frames_to_service_counter = 0
     #   simulation starts here
     t_tag = 0
-    context = Context(0.9)
-    while not events.empty():
-        output_ports_counter = [0] * int(m)
-        curr_event = events.get_nowait()
-        while not curr_event.empty():
-            output_ports_counter[curr_event.get_nowait()] += 1
-        for o_port in range(int(m)):
-            min_num = min(int(q_list[o_port]), int(output_ports_counter[o_port]))
-            frames_done_output_port[o_port] += min_num
-            frames_done_counter += frames_done_output_port[o_port]
-            frames_left_counter -= frames_done_counter
-            if int(q_list[o_port]) < int(output_ports_counter[o_port]):
-                temp_t = int(output_ports_counter[o_port]) - int(q_list[o_port])
-                deleted_output_port[o_port] += temp_t
-                deleted_frames_counter += deleted_output_port[o_port]
-                frames_left_counter -= deleted_frames_counter
-            t_start_service_total = frames_done_output_port[o_port] * context.get_time()
-            t_end_service_total = frames_done_output_port[o_port] * float(1/int(mu_list[o_port]))
-            t_w += t_start_service_total
-            t_s -= t_start_service_total
-            t_s += t_end_service_total
-            t_tag += min_num * float(1/int(mu_list[o_port]))
-        context.tick()
+    #   todo: check what should be the unit
+    output_ports_counter = [0] * int(m1)
+    free_port = [True] * (int(m1))
+    ports_service_time = [0] * (int(m1))
+    print(free_port[0])
+    print(free_port[1])
+    while not len(events) == 0:
+        curr_event = queue.heappop(events)
+        o_port = int(curr_event[1][0])
+        is_new_frame = bool(curr_event[1][1])
+        queued = bool(curr_event[1][2])
+        time_stamp = float(curr_event[0])
+        is_full = (int(output_ports_counter[o_port]) == int(q_list1[o_port]))
+        is_port_free = free_port[o_port]
+        #   print(o_port, is_new_frame, time_stamp, is_full, sep=",")
+        if is_new_frame:
+            if is_full:
+                if not is_port_free:
+                    deleted_output_port[o_port] += 1
+                    deleted_frames_counter += 1
+                    if queued:
+                        output_ports_counter[o_port] -= 1
+                        t_w += time_stamp
+                elif is_port_free:
+                    #   print("bad")
+                    #   add/sub start of service time
+                    t_w += time_stamp
+                    t_s -= time_stamp
+                    if not queued:
+                        output_ports_counter[o_port] += 1
+                        t_w -= time_stamp
+                    lambda_var = float(mu_list1[o_port])
+                    exp_out1 = np.random.exponential(1.0/lambda_var)
+                    time_entry = time_stamp + exp_out1
+                    entry = [time_entry, [o_port, False, False]]
+                    queue.heappush(events, entry)
+                    free_port[o_port] = False
+                    ports_service_time[o_port] = exp_out1
+                #    continue
+            if not is_full:
+                if not is_port_free:
+                    if not queued:
+                        output_ports_counter[o_port] += 1
+                        #   sub enter to queue time
+                        t_w -= time_stamp
+                    new_event = [time_stamp + ports_service_time[o_port], [o_port, True, True]]
+                    queue.heappush(events, new_event)
+                if is_port_free:
+                    if not queued and ports_service_time[o_port] > 0:
+                        #   sub enter to queue time
+                        t_w -= time_stamp
+                        output_ports_counter[o_port] += 1
+                        new_event = [time_stamp + ports_service_time[o_port], [o_port, True, True]]
+                        queue.heappush(events, new_event)
+                    else:
+                        if not queued:
+                            output_ports_counter[o_port] += 1
+                            #   subtracting insertion to queue time
+                            t_w -= time_stamp
+                        #   add sub start of service time
+                        t_w += time_stamp
+                        t_s -= time_stamp
+                        lambda_var = float(mu_list1[o_port])
+                        exp_out2 = np.random.exponential(1.0/lambda_var)
+                        time_entry = time_stamp + exp_out2 + ports_service_time[o_port]
+                        entry = [time_entry, [o_port, False, False]]
+                        queue.heappush(events, entry)
+                        free_port[o_port] = False
+                        ports_service_time[o_port] = exp_out2
+        else:
+            #   END SERVICE
+            output_ports_counter[o_port] -= 1
+            frames_done_counter += 1
+            frames_done_output_port[o_port] += 1
+            lambda_var = float(mu_list1[o_port])
+            exp_out = np.random.exponential(1.0/lambda_var)
+            t_tag = time_stamp + exp_out
+            #   adding end of service time
+            t_s += t_tag
+            free_port[o_port] = True
+            ports_service_time[o_port] = 0
 
     y = frames_done_counter
-    #   todo: return frames done for each output port
     x = deleted_frames_counter
-    #   todo: return deleted frames for each output port
-    #   t_w_avg = float(t_w/y)
-    #   t_s_avg = float(t_s/y)
-    print("T': ")
-    print(t_tag)
-    print("x: ")
-    print(x)
-    print("x1: ")
-    print(deleted_output_port[0])
-    print("x2: ")
-    print(deleted_output_port[1])
-    print("y: ")
-    print(y)
-    print("y1: ")
-    print(frames_done_output_port[0])
-    print("y2: ")
-    print(frames_done_output_port[1])
-    print("Tw: ")
-    #   print(t_w_avg)
-    print("Ts: ")
-    #   print(t_s_avg)
+    t_w_avg = float(t_w/y)
+    t_s_avg = float(t_s/y)
+    #   print("x:")
+    #   print(deleted_frames_counter)
+    #   print("x1:")
+    #   print(deleted_output_port[0])
+    #   print("x2:")
+    #   print(deleted_output_port[1])
+    #   print("y:")
+    #   print(frames_done_counter)
+    #   print("y1:")
+    #   print(frames_done_output_port[0])
+    #   print("y2:")
+    #   print(frames_done_output_port[1])
+
+    file_temp.write("T': %.2f, x: %d, x1: %d, x2: %d, y: %d, y1: %d, y2: %d, Tw: %.8f, Ts: %.8f %%\n"
+                    % (t_tag, deleted_frames_counter, deleted_output_port[0],
+                       deleted_output_port[1], frames_done_counter, frames_done_output_port[0],
+                        frames_done_output_port[1], t_w_avg, t_s_avg))
+
 
 def main():
+    file_temp = open("output.csv", "w+")
+
     t = sys.argv[1]
     n = sys.argv[2]
     m = sys.argv[3]
@@ -131,37 +183,49 @@ def main():
     columns = m
     matrix_p = []
     index_argv = 4
+    print("matrix prob:")
     for i in range(int(n)):
         sub = []
         for j in range(int(m)):
-            sub.insert(j, sys.argv[index_argv])
+            sub.append(float(sys.argv[index_argv]))
+            print(index_argv)
             index_argv += 1
         matrix_p.append(sub)
+    for i in range(int(n)):
+        for j in range(int(m)):
+            print(i, j, matrix_p[i][j], sep=",")
 
     #   initialize lambdas array
     lambda_array = []
+    print("lambda array:")
     index_argv = 3 + ((int(n)) * (int(m))) + 1
     for i in range(int(n)):
-        lambda_array.insert(i, sys.argv[index_argv])
+        lambda_array.append(sys.argv[index_argv])
+        print(i, index_argv, lambda_array[i], sep=",")
         index_argv += 1
 
     #   init Qs array
     q_array = []
+    print("q list sizes array:")
     index_argv = 3 + ((int(n)) * (int(m))) + int(n) + 1
     for i in range(int(m)):
-        q_array.insert(i, sys.argv[index_argv])
+        q_array.append(sys.argv[index_argv])
+        print(i, index_argv,q_array[i], sep=",")
         index_argv += 1
 
     #   init mu array
-    mu_array = [int(m)]
+    mu_array = []
+    print("mu array:")
     index_argv = 3 + ((int(n)) * (int(m))) + int(n) + int(m) + 1
     for index in range(int(m)):
-        #   print(index)
-        mu_array.insert(index, sys.argv[int(index_argv)])
+        mu_array.append(sys.argv[int(index_argv)])
+        print(index, index_argv, mu_array[index], sep=",")
         index_argv += 1
 
     #   call switch with suitable parameters
-    switch(t, n, m, matrix_p, lambda_array, q_array, mu_array)
+    for i in range(2):
+        switch(t, n, m, matrix_p, lambda_array, q_array, mu_array, file_temp)
+    file_temp.close()
 
     #   print out result to file
 
